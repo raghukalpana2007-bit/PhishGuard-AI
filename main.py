@@ -2,80 +2,84 @@ import streamlit as st
 import re
 
 st.set_page_config(page_title="PhishGuard AI", page_icon="🛡️")
-
 st.title("🛡️ PhishGuard AI")
-st.subheader("Built by Kalpana | 3rd Year | Chennai")
-st.write("AI tool to detect fake links! | Tamil + WhatsApp + Email Support!")
+st.write("Built by Kalpana | 3rd Year | Chennai")
+st.write("AI tool to detect fake links! Tamil + WhatsApp + Email Support!")
 
-# Create Tabs for 3 Features
 tab1, tab2, tab3 = st.tabs(["🔗 Link Check", "💬 WhatsApp Link", "📧 Email Check"])
 
-def is_phishing(url):
-    score = 0
+def check_phishing(url):
+    url = url.lower()
+    risk = 0
     reasons = []
-    if len(url) > 75:
-        score += 2
-        reasons.append("⚠️ URL unusually long")
-    if "@" in url:
-        score += 3
-        reasons.append("🚩 Contains '@' symbol")
-    if url.count('.') > 4:
-        score += 2
-        reasons.append("🚩 Too many dots")
-    if "login" in url.lower() or "verify" in url.lower():
-        score += 1
-        reasons.append("⚠️ Suspicious keywords")
-    return score, reasons
+    
+    fake_words = ["free", "money", "offer", "login", "verify", "account", "update", "gift", "lottery", "prize", "bank", "secure"]
+    for word in fake_words:
+        if word in url:
+            risk += 2
+            reasons.append(f"'{word}' fake word irukku")
 
-def show_result(url):
-    score, reasons = is_phishing(url)
-    if score >= 3:
-        st.error("🚨 AYYO! Idhu Fraud Link da! Click pannadha da!")
-        st.error(f"Risk Score: {score}/10 - DANGER!")
-        for r in reasons:
-            st.write(r)
-        st.warning("Idhu un data ah thirudum! Delete pannidu!")
-    else:
-        st.success("✅ Safe da! No tension, use pannalam!")
-        st.balloons()
-        st.write(f"Risk Score: {score}/10 - Safe")
+    sus_tld = [".tk", ".ml", ".ga", ".cf", ".gq", ".xyz", ".top", ".buzz"]
+    for tld in sus_tld:
+        if tld in url:
+            risk += 3
+            reasons.append(f"{tld} - suspicious domain!")
+
+    if url.count("-") >= 3:
+        risk += 2
+        reasons.append("Romba hyphen irukku - fake sign!")
+    
+    if len(url) > 75:
+        risk += 1
+        reasons.append("Link romba perusu")
+    
+    if "http://" in url:
+        risk += 1
+        reasons.append("https illa, http than irukku")
+    
+    if "@" in url:
+        risk += 2
+        reasons.append("@ irukku - phishing trick!")
+    
+    return risk, reasons
 
 with tab1:
-    st.write("### Link ah check pannu da!")
-    url = st.text_input("🔍 Enter URL:", placeholder="https://example.com", key="url1")
-    if st.button("Check pannu!", key="b1"):
+    st.subheader("Link ah check pannu da!")
+    url = st.text_input("🔍 Enter URL:", key="a")
+    if st.button("Check pannu!", key="1"):
         if url:
-            show_result(url)
-        else:
-            st.warning("Link enter pannu da!")
+            risk, reasons = check_phishing(url)
+            if risk >= 4:
+                st.error(f"🚨 DANGER DA! Fake link! Risk Score: {risk}/10 - DANGER")
+                for r in reasons:
+                    st.write(f"- {r}")
+            elif risk >= 2:
+                st.warning(f"⚠️ Doubt ah irukku! Risk Score: {risk}/10 - Suspect")
+                for r in reasons:
+                    st.write(f"- {r}")
+            else:
+                st.success(f"✅ Safe da! No tension! Risk Score: {risk}/10 - Safe")
 
 with tab2:
-    st.write("### WhatsApp la vantha link ah check pannu!")
-    wa_url = st.text_area("WhatsApp Message ah full ah paste pannu:", placeholder="Forwarded message paste pannu da...", key="wa")
-    if st.button("WhatsApp Link Check!", key="b2"):
-        # Extract URLs from text
-        urls = re.findall(r'http[s]?://\S+', wa_url)
-        if urls:
-            for u in urls:
-                st.write(f"Found: {u}")
-                show_result(u)
-        else:
-            st.warning("Link eh illa da! Message la link irukka paaru!")
+    st.subheader("WhatsApp link check pannu da!")
+    url2 = st.text_input("WhatsApp link:", key="b")
+    if st.button("Check pannu!", key="2"):
+        if url2:
+            risk, reasons = check_phishing(url2)
+            if risk >= 4:
+                st.error(f"🚨 WhatsApp la fake da! Risk: {risk}/10")
+                for r in reasons: st.write(f"- {r}")
+            else:
+                st.success(f"✅ Safe da! Risk: {risk}/10")
 
 with tab3:
-    st.write("### Email phishing ah check pannu!")
-    email_text = st.text_area("Email content ah paste pannu:", placeholder="Dear user, your account blocked... click here...", key="email")
-    if st.button("Email Check!", key="b3"):
-        if email_text:
-            urls = re.findall(r'http[s]?://\S+', email_text)
-            suspicious_words = ["urgent", "blocked", "verify", "lottery", "prize", "click immediately"]
-            count = sum(1 for w in suspicious_words if w in email_text.lower())
-            if count >= 2 or urls:
-                st.error("🚨 Dei! Idhu Fake Email da! Nambadha!")
-                st.write(f"{count} suspicious words found!")
-                for u in urls:
-                    show_result(u)
+    st.subheader("Email link check pannu da!")
+    url3 = st.text_input("Email link:", key="c")
+    if st.button("Check pannu!", key="3"):
+        if url3:
+            risk, reasons = check_phishing(url3)
+            if risk >= 4:
+                st.error(f"🚨 Email fake da! Risk: {risk}/10")
+                for r in reasons: st.write(f"- {r}")
             else:
-                st.success("✅ Email ok maadhiri theriyuthu, but careful ah iru da!")
-        else:
-            st.warning("Email paste pannu da!")
+                st.success(f"✅ Safe da! Risk: {risk}/10")
